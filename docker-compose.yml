@@ -42,7 +42,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-     - ~/data/temp-server/log:/var/log
+     - /home/pi/data/temp-server/log:/var/log
     links:
      - influx
     depends_on:
