@@ -1,0 +1,51 @@
+version: "2.0"  
+networks:
+  temp-network:
+    driver: bridge
+    
+services:  
+  influx:
+    image: influxdb
+    ports:
+     - "8083:8083"
+     - "8086:8086"
+    environment:
+     - INFLUXDB_USER=user
+     - INFLUXDB_PASS=pass
+     - INFLUXDB_NAME=homedata
+     - PRE_CREATE_DB="homedata"
+    volumes:
+    # Data persistency
+     - /home/pi/data/influxdb:/var/lib/influxdb
+    networks:
+     - temp-network
+  grafana:
+    image: grafana/grafana
+    environment:
+     - INFLUXDB_USER=user
+     - INFLUXDB_PASS=pass
+     - INFLUXDB_NAME=homedata
+     
+    volumes:
+    # Data persistency
+     - /home/pi/data/grafana:/var/lib/grafana
+    ports:
+     - "3000:3000"
+    links:
+     - influx
+    depends_on:
+     - influx
+    networks:
+     - temp-network
+  temp-server:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+     - ~/data/temp-server/log:/var/log
+    links:
+     - influx
+    depends_on:
+     - influx
+    networks:
+     - temp-network
