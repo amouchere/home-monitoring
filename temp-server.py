@@ -17,7 +17,7 @@ import simplejson
 
 
 # création du logguer
-logging.basicConfig(filename='/home/pi/data/log/tempServer.log', level=logging.INFO, format='%(asctime)s %(message)s')
+logging.basicConfig(filename='/var/log/tempServer.log', level=logging.INFO, format='%(asctime)s %(message)s')
 logger = logging.getLogger()
 
 
