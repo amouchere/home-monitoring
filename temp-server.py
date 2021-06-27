@@ -17,7 +17,7 @@ import simplejson
 
 
 # création du logguer
-logging.basicConfig(filename='/var/log/tempServer.log', level=logging.INFO, format='%(asctime)s %(message)s')
+logging.basicConfig(filename='/var/log/tempServer.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
 logger = logging.getLogger()
 
 
@@ -31,6 +31,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(b'Test GET')
 
     def do_POST(self):
+        path= self.path
+        logging.debug("Path %s", path)
         content_length = int(self.headers['Content-Length'])
         body = self.rfile.read(content_length)
         self.send_response(200)
@@ -38,9 +40,20 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         response = BytesIO()
         
         data = simplejson.loads(body)
-        add_measures('temperature', float(data['temperature']), data['location'])
-        add_measures('humidity', float(data['humidity']), data['location'])
-        
+
+        if path == "/generic" :
+            logging.debug("Path %s", path)
+            # {"location":"growlab","table":[{"key":"temperature","value":"23"},{"key":"humidity","value":"81.90"}]}
+            for x in data['table']:
+                logging.info(x['key'])
+                logging.info(x['value'])
+                add_measures(x['key'], float(x['value']), data['location'])
+
+        else :
+            # {"temperature": "23.00" , "humidity": "81.90", "location": "chambre_emma"}
+            add_measures('temperature', float(data['temperature']), data['location'])
+            add_measures('humidity', float(data['humidity']), data['location'])
+            
         response.write(b'This is POST request.Received: ')
         logging.info("Request from %s", data['location'])
         logging.debug("Request %s", body)
@@ -53,12 +66,6 @@ httpd = HTTPServer(('0.0.0.0', 5000), SimpleHTTPRequestHandler)
 
 def add_measures(key, value, location):
     points = []
-    
-    # Ajustement des sondes mal calibrées
-    if location == 'chambre_parent' and key == 'temperature':
-        logging.debug("Adjust %s for probe %s : before value %s", key, location, value)
-        value +=  0.70
-        logging.debug("Adjust %s for probe %s : after value %s", key, location, value)
     
     point = {
                 "measurement": key,
