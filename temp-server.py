@@ -40,13 +40,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         response = BytesIO()
         
         data = simplejson.loads(body)
-
         if path == "/generic" :
-            logging.debug("Path %s", path)
             # {"location":"growlab","table":[{"key":"temperature","value":"23"},{"key":"humidity","value":"81.90"}]}
             for x in data['table']:
-                logging.info(x['key'])
-                logging.info(x['value'])
                 add_measures(x['key'], float(x['value']), data['location'])
 
         else :
@@ -55,7 +51,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             add_measures('humidity', float(data['humidity']), data['location'])
             
         response.write(b'This is POST request.Received: ')
-        logging.info("Request from %s", data['location'])
+        logging.info("Request on path %s from %s ", path, data['location'])
         logging.debug("Request %s", body)
         response.write(body)
         self.wfile.write(response.getvalue())
