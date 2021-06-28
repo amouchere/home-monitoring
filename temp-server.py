@@ -17,7 +17,7 @@ import simplejson
 
 
 # création du logguer
-logging.basicConfig(filename='/var/log/tempServer.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename='/var/log/tempServer.log', level=logging.INFO, format='%(asctime)s %(message)s')
 logger = logging.getLogger()
 
 
@@ -31,30 +31,34 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(b'Test GET')
 
     def do_POST(self):
-        path= self.path
-        logging.debug("Path %s", path)
-        content_length = int(self.headers['Content-Length'])
-        body = self.rfile.read(content_length)
-        self.send_response(200)
-        self.end_headers()
-        response = BytesIO()
-        
-        data = simplejson.loads(body)
-        if path == "/generic" :
-            # {"location":"growlab","table":[{"key":"temperature","value":"23"},{"key":"humidity","value":"81.90"}]}
-            for x in data['table']:
-                add_measures(x['key'], float(x['value']), data['location'])
-
-        else :
-            # {"temperature": "23.00" , "humidity": "81.90", "location": "chambre_emma"}
-            add_measures('temperature', float(data['temperature']), data['location'])
-            add_measures('humidity', float(data['humidity']), data['location'])
+        try:
+            path= self.path
+            logging.debug("Path %s", path)
+            content_length = int(self.headers['Content-Length'])
+            body = self.rfile.read(content_length)
+            self.send_response(200)
+            self.end_headers()
+            response = BytesIO()
             
-        response.write(b'This is POST request.Received: ')
-        logging.info("Request on path %s from %s ", path, data['location'])
-        logging.debug("Request %s", body)
-        response.write(body)
-        self.wfile.write(response.getvalue())
+            logging.debug("Body %s", body)
+            data = simplejson.loads(body)
+            if (path == "/generic") :
+                # {"location":"growlab","table":[{"key":"temperature","value":"23"},{"key":"humidity","value":"81.90"}]}
+                for x in data['table']:
+                    add_measures(x['key'], float(x['value']), data['location'])
+
+            else :
+                # {"temperature": "23.00" , "humidity": "81.90", "location": "chambre_emma"}
+                add_measures('temperature', float(data['temperature']), data['location'])
+                add_measures('humidity', float(data['humidity']), data['location'])
+                
+            response.write(b'This is POST request.Received: ')
+            logging.info("Request on path %s from %s ", path, data['location'])
+            logging.debug("Request %s", body)
+            response.write(body)
+            self.wfile.write(response.getvalue())
+        except Exception as e:
+            logging.error("Error: {}".format(e))
 
 
 httpd = HTTPServer(('0.0.0.0', 5000), SimpleHTTPRequestHandler)
